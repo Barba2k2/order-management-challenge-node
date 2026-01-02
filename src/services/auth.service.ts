@@ -1,35 +1,41 @@
 import jwt from 'jsonwebtoken';
-import { UserModel, IUser } from '../models/user.model.js';
-import { AppError } from '../utils/AppError.js';
+import { UserRepository } from '../repositories/user.repository.js';
+import { UserEntity } from '../domain/entities/user.entity.js';
+import { AppError } from '../shared/AppError.js';
 import { env } from '../config/env.js';
 
-interface AuthPayload {
-  userId: string;
+interface AuthInput {
+  email: string;
+  password: string;
+}
+
+interface AuthOutput {
+  user: UserEntity;
+  token: string;
 }
 
 export class AuthService {
-  async register(email: string, password: string): Promise<{ user: IUser; token: string }> {
-    const existingUser = await UserModel.findOne({ email });
+  constructor(private readonly userRepository: UserRepository) {}
 
+  async register(input: AuthInput): Promise<AuthOutput> {
+    const existingUser = await this.userRepository.findByEmail(input.email);
     if (existingUser) {
       throw new AppError('Email already registered', 400);
     }
 
-    const user = await UserModel.create({ email, password });
+    const user = await this.userRepository.create(input);
     const token = this.generateToken(user.id);
 
     return { user, token };
   }
 
-  async login(email: string, password: string): Promise<{ user: IUser; token: string }> {
-    const user = await UserModel.findOne({ email }).select('+password');
-
+  async login(input: AuthInput): Promise<AuthOutput> {
+    const user = await this.userRepository.findByEmailWithPassword(input.email);
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const isPasswordValid = await user.comparePassword(password);
-
+    const isPasswordValid = await user.comparePassword(input.password);
     if (!isPasswordValid) {
       throw new AppError('Invalid credentials', 401);
     }
@@ -39,19 +45,9 @@ export class AuthService {
     return { user, token };
   }
 
-  generateToken(userId: string): string {
+  private generateToken(userId: string): string {
     return jwt.sign({ userId }, env.JWT_SECRET, {
       expiresIn: env.JWT_EXPIRES_IN,
-    });
-  }
-
-  verifyToken(token: string): AuthPayload {
-    try {
-      return jwt.verify(token, env.JWT_SECRET) as AuthPayload;
-    } catch {
-      throw new AppError('Invalid or expired token', 401);
-    }
+    } as jwt.SignOptions);
   }
 }
-
-export const authService = new AuthService();
