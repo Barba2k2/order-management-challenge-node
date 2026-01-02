@@ -1,31 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { authService } from '../services/auth.service.js';
-
-const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
-});
+import { AuthService } from '../services/auth.service.js';
+import { registerSchema, loginSchema } from '../dtos/auth.dto.js';
 
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password } = registerSchema.parse(req.body);
-      const { user, token } = await authService.register(email, password);
+      const data = registerSchema.parse(req.body);
+      const result = await this.authService.register(data);
 
       res.status(201).json({
         status: 'success',
         data: {
-          user: {
-            id: user.id,
-            email: user.email,
-          },
-          token,
+          user: { id: result.user.id, email: result.user.email },
+          token: result.token,
         },
       });
     } catch (error) {
@@ -35,17 +24,14 @@ export class AuthController {
 
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password } = loginSchema.parse(req.body);
-      const { user, token } = await authService.login(email, password);
+      const data = loginSchema.parse(req.body);
+      const result = await this.authService.login(data);
 
       res.status(200).json({
         status: 'success',
         data: {
-          user: {
-            id: user.id,
-            email: user.email,
-          },
-          token,
+          user: { id: result.user.id, email: result.user.email },
+          token: result.token,
         },
       });
     } catch (error) {
@@ -53,5 +39,3 @@ export class AuthController {
     }
   }
 }
-
-export const authController = new AuthController();
