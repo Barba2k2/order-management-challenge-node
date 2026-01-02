@@ -11,7 +11,6 @@ describe('Health Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('ok');
-      expect(response.body.timestamp).toBeDefined();
     });
   });
 

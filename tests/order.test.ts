@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { UserModel } from '../src/models/user.model.js';
-import { OrderModel, OrderState } from '../src/models/order.model.js';
+import { OrderModel } from '../src/models/order.model.js';
+import { OrderState } from '../src/domain/enums/order.enum.js';
 
 describe('Order Routes', () => {
   const app = createApp();
@@ -38,12 +39,14 @@ describe('Order Routes', () => {
     });
 
     it('should fail without authentication', async () => {
-      const response = await request(app).post('/orders').send({
-        lab: 'Lab Test',
-        patient: 'John Doe',
-        customer: 'Customer A',
-        services: [{ name: 'Service 1', value: 100 }],
-      });
+      const response = await request(app)
+        .post('/orders')
+        .send({
+          lab: 'Lab Test',
+          patient: 'John Doe',
+          customer: 'Customer A',
+          services: [{ name: 'Service 1', value: 100 }],
+        });
 
       expect(response.status).toBe(401);
     });
@@ -102,9 +105,7 @@ describe('Order Routes', () => {
     });
 
     it('should list orders with pagination', async () => {
-      const response = await request(app)
-        .get('/orders')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await request(app).get('/orders').set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(2);
@@ -135,7 +136,7 @@ describe('Order Routes', () => {
           services: [{ name: 'Service 1', value: 100 }],
         });
 
-      orderId = createResponse.body.data.order._id;
+      orderId = createResponse.body.data.order.id;
     });
 
     it('should advance from CREATED to ANALYSIS', async () => {
@@ -147,7 +148,7 @@ describe('Order Routes', () => {
       expect(response.body.data.order.state).toBe(OrderState.ANALYSIS);
     });
 
-    it('should advance from ANALYSIS to COMPLETED', async () => {
+    it('should advance from ANALYSIS to COMPLETED and mark services as DONE', async () => {
       await request(app)
         .patch(`/orders/${orderId}/advance`)
         .set('Authorization', `Bearer ${token}`);
@@ -158,6 +159,7 @@ describe('Order Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.data.order.state).toBe(OrderState.COMPLETED);
+      expect(response.body.data.order.services.every((s: { status: string }) => s.status === 'DONE')).toBe(true);
     });
 
     it('should not advance from COMPLETED', async () => {
