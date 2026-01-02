@@ -4,16 +4,33 @@ API para gerenciamento de pedidos com Node.js, Express, Mongoose e TypeScript.
 
 ## Requisitos
 
-- Node.js 18+
-- MongoDB
+- Docker e Docker Compose (recomendado)
+- Ou: Node.js 18+ e MongoDB
 
-## Instalação
+## Execução com Docker (Recomendado)
+
+```bash
+# Iniciar
+docker-compose up -d
+
+# Parar
+docker-compose down
+
+# Ver logs
+docker-compose logs -f app
+```
+
+A API estará disponível em `http://localhost:3000`
+
+## Execução Local (sem Docker)
+
+### Instalação
 
 ```bash
 npm install
 ```
 
-## Configuração
+### Configuração
 
 Copie o arquivo `.env.example` para `.env` e configure as variáveis:
 
@@ -21,7 +38,7 @@ Copie o arquivo `.env.example` para `.env` e configure as variáveis:
 cp .env.example .env
 ```
 
-## Execução
+### Execução
 
 ```bash
 # Desenvolvimento
