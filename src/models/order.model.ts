@@ -1,40 +1,25 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import { OrderState, OrderStatus, ServiceStatus } from '../domain/enums/order.enum.js';
 
-export enum OrderState {
-  CREATED = 'CREATED',
-  ANALYSIS = 'ANALYSIS',
-  COMPLETED = 'COMPLETED',
-}
-
-export enum OrderStatus {
-  ACTIVE = 'ACTIVE',
-  DELETED = 'DELETED',
-}
-
-export enum ServiceStatus {
-  PENDING = 'PENDING',
-  DONE = 'DONE',
-}
-
-export interface IService {
+export interface IServiceDocument {
   name: string;
   value: number;
   status: ServiceStatus;
 }
 
-export interface IOrder extends Document {
+export interface IOrderDocument extends Document {
   lab: string;
   patient: string;
   customer: string;
   state: OrderState;
   status: OrderStatus;
-  services: IService[];
+  services: IServiceDocument[];
   user: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const serviceSchema = new Schema<IService>(
+const serviceSchema = new Schema<IServiceDocument>(
   {
     name: {
       type: String,
@@ -55,7 +40,7 @@ const serviceSchema = new Schema<IService>(
   { _id: false }
 );
 
-const orderSchema = new Schema<IOrder>(
+const orderSchema = new Schema<IOrderDocument>(
   {
     lab: {
       type: String,
@@ -85,7 +70,7 @@ const orderSchema = new Schema<IOrder>(
     services: {
       type: [serviceSchema],
       validate: {
-        validator: function (services: IService[]) {
+        validator: function (services: IServiceDocument[]) {
           return services && services.length > 0;
         },
         message: 'At least one service is required',
@@ -106,4 +91,4 @@ orderSchema.index({ state: 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ user: 1 });
 
-export const OrderModel = mongoose.model<IOrder>('Order', orderSchema);
+export const OrderModel = mongoose.model<IOrderDocument>('Order', orderSchema);
