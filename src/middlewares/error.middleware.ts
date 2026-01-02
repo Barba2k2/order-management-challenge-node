@@ -1,26 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { AppError } from '../utils/AppError.js';
+import { AppError } from '../shared/AppError.js';
 
 export function errorHandler(
-  error: Error,
+  err: Error,
   _req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  if (error instanceof AppError) {
-    res.status(error.statusCode).json({
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
       status: 'error',
-      message: error.message,
+      message: err.message,
     });
     return;
   }
 
-  if (error instanceof ZodError) {
+  if (err instanceof ZodError) {
     res.status(400).json({
       status: 'error',
       message: 'Validation error',
-      errors: error.errors.map((e) => ({
+      errors: err.errors.map((e) => ({
         field: e.path.join('.'),
         message: e.message,
       })),
@@ -28,10 +28,17 @@ export function errorHandler(
     return;
   }
 
-  console.error('Unexpected error:', error);
+  console.error('Unexpected error:', err);
 
   res.status(500).json({
     status: 'error',
     message: 'Internal server error',
+  });
+}
+
+export function notFoundHandler(_req: Request, res: Response): void {
+  res.status(404).json({
+    status: 'error',
+    message: 'Route not found',
   });
 }
