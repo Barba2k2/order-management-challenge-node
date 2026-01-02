@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.local
+coverage
+*.log
+.git
+.gitignore
+README.md
+DESAFIO.md
+.DS_Store
+tests
+vitest.config.ts
+.claude
