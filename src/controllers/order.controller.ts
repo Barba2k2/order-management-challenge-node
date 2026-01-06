@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { OrderService } from '../services/order.service.js';
-import { createOrderSchema, listOrdersSchema } from '../dtos/order.dto.js';
+import { createOrderSchema, listOrdersSchema, orderIdSchema } from '../dtos/order.dto.js';
 import { AppError } from '../shared/AppError.js';
 
 export class OrderController {
@@ -57,7 +57,8 @@ export class OrderController {
         throw new AppError('Unauthorized', 401);
       }
 
-      const order = await this.orderService.getById(req.params.id, req.userId);
+      const orderId = orderIdSchema.parse(req.params.id);
+      const order = await this.orderService.getById(orderId, req.userId);
 
       res.status(200).json({
         status: 'success',
@@ -74,7 +75,8 @@ export class OrderController {
         throw new AppError('Unauthorized', 401);
       }
 
-      const order = await this.orderService.advance(req.params.id, req.userId);
+      const orderId = orderIdSchema.parse(req.params.id);
+      const order = await this.orderService.advance(orderId, req.userId);
 
       res.status(200).json({
         status: 'success',
