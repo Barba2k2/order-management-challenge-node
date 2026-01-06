@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { OrderEntity } from '../domain/entities/order.entity.js';
 import { OrderState, OrderStatus, ServiceStatus } from '../domain/enums/order.enum.js';
 import { OrderModel, IOrderDocument } from '../models/order.model.js';
+import { AppError } from '../shared/AppError.js';
 
 interface CreateOrderData {
   userId: string;
@@ -47,8 +48,12 @@ export class OrderRepository {
   }
 
   async findById(id: string, userId: string): Promise<OrderEntity | null> {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new AppError('Unauthorized', 401);
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return null;
+      throw new AppError('Order not found', 404);
     }
 
     const order = await OrderModel.findOne({
@@ -61,6 +66,9 @@ export class OrderRepository {
 
   async findAll(params: ListOrdersParams) {
     const { userId, page, limit, state } = params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new AppError('Unauthorized', 401);
+    }
     const skip = (page - 1) * limit;
 
     const query: Record<string, unknown> = {
@@ -85,7 +93,7 @@ export class OrderRepository {
 
   async updateState(id: string, state: OrderState): Promise<OrderEntity> {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new Error('Order not found');
+      throw new AppError('Order not found', 404);
     }
 
     const updateData: Record<string, unknown> = { state };
@@ -97,7 +105,7 @@ export class OrderRepository {
     const order = await OrderModel.findByIdAndUpdate(id, updateData, { new: true });
 
     if (!order) {
-      throw new Error('Order not found');
+      throw new AppError('Order not found', 404);
     }
 
     return this.toEntity(order);
